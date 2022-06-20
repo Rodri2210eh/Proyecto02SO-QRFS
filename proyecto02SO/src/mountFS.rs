@@ -4,7 +4,7 @@ use std::ffi::OsStr;
 use std::mem;
 use crate::mountFS;
 use serde::{Serialize, Deserialize};
-use crate::ses_infor::FileAttrDef;
+use crate::sesInformation::FileAttrDef;
 use qrcode::QrCode;
 use image::Luma;
 
@@ -262,7 +262,7 @@ impl Rb_fs {
         }
         match vec_decode {
             Some(vec_decode) => {
-                let disk_to_load:mkfs::Disk = mkfs::decode(vec_decode);
+                let disk_to_load:mountFS::Disk = mountFS::decode(vec_decode);
                 //Aca se carga el disc al fs
                 println!("----RB-FS DISCO CARGADO---------");
             },

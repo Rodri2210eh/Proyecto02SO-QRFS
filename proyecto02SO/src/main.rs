@@ -13,8 +13,9 @@ fn main() {
             return;
         }
     };
-    let fs = mkfs::Rb_fs::new(mountpoint.clone());
-
+    println!(mountpoint);
+    let fs = mountFS::Rb_fs::new(mountpoint.clone());
+    println!("Sistema de archivos !");
     let options = ["-o", "nonempty"]
         .iter()
         .map(|o| o.as_ref())
