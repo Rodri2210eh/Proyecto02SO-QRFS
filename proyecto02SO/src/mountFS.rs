@@ -247,7 +247,7 @@ impl Rb_fs {
     pub fn load_fs(&mut self, path : String) {
         // Carga la base pasada por parametro
         let img = image::open("disk_memories/qrdiskcode.png").unwrap();
-        let img_gray = img.into_luma(); //La pasa a grises
+        let img_gray = img.to_luma(); //La pasa a grises
 
         //Crea el decodificador
         let mut decoder = quircs::Quirc::default();

@@ -13,7 +13,7 @@ fn main() {
             return;
         }
     };
-    println!(mountpoint);
+    println!("{:?}",mountpoint);
     let fs = mountFS::Rb_fs::new(mountpoint.clone());
     println!("Sistema de archivos !");
     let options = ["-o", "nonempty"]
