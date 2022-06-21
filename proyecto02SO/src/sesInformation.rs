@@ -3,7 +3,7 @@ use fuse::{FileAttr, FileType};
 use time::Timespec;
 
 
-// Al serializarf no es posibrle con algunas opciones de fuse
+// Al serializar no es posible con algunas opciones de fuse
 //Entonces las definimos
 
 #[derive(Serialize, Deserialize)]

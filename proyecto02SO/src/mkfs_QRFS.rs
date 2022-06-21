@@ -115,7 +115,7 @@ impl Disk {
     }
 
     //Retorna el siguiente inod disponible
-    pub fn newInode(&mut self) -> u64{
+    pub fn returnNextInode(&mut self) -> u64{
         unsafe{
             self.sigInode = self.sigInode +1;
             return self.sigInode;
@@ -235,13 +235,13 @@ impl Disk {
 
 
 
-//                                        -ACA INICIA EL CODIGO DEL FILESYSTEM                                    -
+//FILESYSTEM
 
-
-//Nuestro fs tiene un disco
+//Estructura del FS, solo tendremos un disco
 pub struct fileSystem {
     disk : Disk
 }
+
 impl fileSystem {
     pub fn new(rootPath:String, diskPath:String) -> Self{
         let newDisk = Disk::new(rootPath.to_string(), diskPath);
@@ -261,14 +261,6 @@ impl fileSystem {
     pub fn saveFileSystem(&self){
         let encodeFS = encode(&self.disk);
         saveQR(encodeFS);
-    }
-    
-}
-
-impl Drop for fileSystem {
-    fn drop(&mut self) {
-        &self.saveFileSystem();
-        println!("Save FileSystem");
     }
 }
 
@@ -291,10 +283,10 @@ impl Filesystem for fileSystem {
         }
     }
 
-    //Crea un archivo en la padre pasado poor parametro
+    //Crea un archivo en el padre pasado por parametro
     fn create(&mut self, _req: &Request, parent: u64, name: &OsStr, mode: u32, flags: u32, reply: ReplyCreate) {
 
-        let availableInode = self.disk.newInode();
+        let availableInode = self.disk.returnNextInode();
         let memBlock = memBlock {
             referenceInode : availableInode,
             data : Vec::new()
@@ -409,7 +401,7 @@ impl Filesystem for fileSystem {
         }
     }
 
-    //Literalmente, lee un directorio
+    //lee un directorio
     fn readdir(&mut self, _req: &Request, inod: u64, fh: u64, offset: i64, mut reply: ReplyDirectory) {
         println!("    FileSystem ReadDir");
 
@@ -456,11 +448,26 @@ impl Filesystem for fileSystem {
         }
     }
 
+    //Abre un directorio
+    fn opendir(&mut self, _req: &Request, _inod: u64, _flags: u32, reply: ReplyOpen) { 
+        let dir = self.disk.getInode(_inod);
+        match dir {
+            Some(dir) => {
+                println!("    FileSystem Opendir");
+                reply.opened(dir.attributes.ino, 1 as u32);
+            },
+            None => {
+                println!("No se pudo abrir")
+            }
+        }
+
+    }
+
     //Crea un directorio y asigna un nuevo inod
     fn mkdir(&mut self, _req: &Request, parent: u64, name: &OsStr, _mode: u32, reply: ReplyEntry) {
         println!("    FileSystem mkdir");
 
-        let inod = self.disk.newInode(); 
+        let inod = self.disk.returnNextInode(); 
         let timespe = time::now().to_timespec();
         let attr = FileAttr {
             ino: ino as u64,
@@ -513,39 +520,34 @@ impl Filesystem for fileSystem {
         }
     }
 
-    //Devuelve las estadistcas del filesystem *no funciona bien XD
+    //Devuelve las estadistcas del filesystem
     fn statfs(&mut self, _req: &Request, _ino: u64, reply: ReplyStatfs) {
         println!("    FileSystem STATFS");
 
-        let mut blocks:u64 = 0;
-        let mut files:u64 = self.disk.superBlock.len().try_into().unwrap();
-        let mut bsize:u32 = 0;
-        let mut namelen:u32 = 0;
-    
-        for i in 0..self.disk.superBlock.len() {
-            blocks += self.disk.superBlock[i].attributes.blocks as u64;
-            bsize += self.disk.superBlock[i].attributes.size as u32;
-            namelen += self.disk.superBlock[i].name.len() as u32;
-        }
-        reply.statfs(blocks,0,0,files,2222 as u64,bsize,namelen,0);
+        let mut blocks:u64 =  (self.disk.super_block.len() +self.disk.memory_block.len()) as u64;
+        let mut blockfree:u64 = blocks - self.disk.memory_block.len() as u64;
+        let mut bavail:u64 = blockfree;
+        let mut files:u64 = self.disk.memory_block.len().try_into().unwrap();
+        let mut filefree:u64 = 1024 as u64;
+        let mut blocksize:u32 = (mem::size_of::<Vec<Inode>>() as u32 +mem::size_of::<Inode>() as u32)*1024;
+        let mut namelen:u32 = 77;
+        let mut freesize:u32 = 1;
+
+        reply.statfs(blocks, blockfree, bavail, files, filefree, blocksize, namelen, freesize);
     }
 
-    //Si datasync != 0, solo se deben vaciar los datos del usuario, no los metadatos.
-    fn fsync(&mut self, _req: &Request, inod: u64, fh: u64, datasync: bool, reply: ReplyEmpty) { 
-        println!("    FileSystem fsync");
-
+    //Vacia los datos de disco y del usuario
+    fn fsync(&mut self, _req: &Request, inod: u64, fh: u64, datasync: bool, reply: ReplyEmpty) {
         reply.error(ENOSYS);
     }
 
     //Revisa el acceso de los permisos
     fn access(&mut self, _req: &Request, _ino: u64, _mask: u32, reply: ReplyEmpty) {
-        println!("    FileSystem access ok");
-
         reply.ok();
     }
 }
 
-//                            ---ACA EMPIEZA EL CODIGO DE SALVAR EL DISCO Y QR                            --
+//Guardar el disco QR
 
 //Transforma el disco a bits
 pub fn encode(object: &Disk) -> Vec<u8> {

@@ -3,7 +3,7 @@ use std::mem;
 use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt};
 
 //Checamos cuanto espacio disponible y cuanto usado en general vemos el estado del disco
-pub fn checkConsistens(fs:&fileSystem){
+pub fn checkConsistence(fs:&fileSystem){
 
     let mut sys = System::new_all();
     sys.refresh_all();
