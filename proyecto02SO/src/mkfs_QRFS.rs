@@ -369,14 +369,13 @@ impl Filesystem for fileSystem {
         match inode {
             Some(inode) => {
                 let inod = inode.attributes.ino;
-                let child = self.disk.get_mut_inode(inod);
+                let child = self.disk.getMutInode(inod);
                 match child {
                     Some(child) => {
                         println!("    FileSystem Rename");
                         child.name = newname.to_str().unwrap().to_string();
                         reply.ok()
-                    },
-                    None => {println!("Error en Rename");}
+                    }
                 }
             },
             None => {
