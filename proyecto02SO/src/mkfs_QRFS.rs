@@ -2,7 +2,7 @@ use fuse::{Filesystem, Request, ReplyCreate, ReplyEmpty, ReplyAttr, ReplyEntry, 
 use libc::{ENOSYS, ENOENT, EIO, EISDIR, ENOSPC};
 use std::ffi::OsStr;
 use std::mem;
-use crate::my_QRFS;
+use crate::mkfs_QRFS;
 use serde::{Serialize, Deserialize};
 use crate::sesInformation::FileAttrDef;
 use qrcode::QrCode;

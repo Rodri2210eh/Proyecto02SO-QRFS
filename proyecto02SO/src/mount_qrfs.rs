@@ -1,4 +1,4 @@
-use crate::my_QRFS;
+use crate::mkfs_QRFS;
 use crate::fsck_qrfs;
 use std::env;
 use std::ffi::OsStr;
