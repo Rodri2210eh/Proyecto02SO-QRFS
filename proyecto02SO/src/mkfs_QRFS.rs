@@ -114,7 +114,7 @@ impl Disk {
         }         
     }
 
-    //Retorna el siguiente inod disponible
+    //Retorna el siguiente ino disponible
     pub fn returnNextInode(&mut self) -> u64{
         unsafe{
             self.sigInode = self.sigInode +1;
@@ -130,31 +130,31 @@ impl Disk {
 
     //Elimina el inode disponible
     pub fn removeInode(&mut self, inode:u64) {
-        self.superBlock.retain(|i| i.attributes.inod != inode);
+        self.superBlock.retain(|i| i.attributes.ino != inode);
     }
 
     //Elimina una referencia de un respectivo inode
-    pub fn clearReference(&mut self, inod: u64, refValue: usize) {
+    pub fn clearReference(&mut self, ino: u64, refValue: usize) {
         for i in 0..self.superBlock.len() {
-            if self.superBlock[i].attributes.inod == inod {
+            if self.superBlock[i].attributes.ino == ino {
                 self.superBlock[i].deleteReference(refValue);
             }
          }
     }
 
     //Agrega una respectiva referencia a un inode
-    pub fn addReference(&mut self, inod: u64, refValue: usize) {
+    pub fn addReference(&mut self, ino: u64, refValue: usize) {
         for i in 0..self.superBlock.len() {
-            if self.superBlock[i].attributes.inod == inod {
+            if self.superBlock[i].attributes.ino == ino {
                 self.superBlock[i].addReference(refValue);
             }
          }
     }
 
      //Obtiene un Inode o nada
-    pub fn getInode(&self, inod: u64) -> Option<&Inode> {
+    pub fn getInode(&self, ino: u64) -> Option<&Inode> {
         for i in 0..self.superBlock.len() {
-            if self.superBlock[i].attributes.inod == inod {
+            if self.superBlock[i].attributes.ino == ino {
                 return Some(&self.superBlock[i]);
             }
 
@@ -163,9 +163,9 @@ impl Disk {
     }
 
     //Obtiene un Inode mutable o nada
-    pub fn getMutInode(&mut self, inod: u64) -> Option<&mut Inode> {
+    pub fn getMutInode(&mut self, ino: u64) -> Option<&mut Inode> {
         for i in 0..self.superBlock.len() {
-            if self.superBlock[i].attributes.inod == inod {
+            if self.superBlock[i].attributes.ino == ino {
                 return Some(&mut self.superBlock[i]);
             }
 
@@ -176,11 +176,11 @@ impl Disk {
     //Busca en base a la carpeta del padre el hijo que tenga el nombre por parametro
     pub fn findInodeByName(&self, parentInode: u64, name: &str) -> Option<&Inode> {
         for i in 0..self.superBlock.len() {
-           if self.superBlock[i].attributes.inod == parentInode {
+           if self.superBlock[i].attributes.ino == parentInode {
             let parent =  &self.superBlock[i];
             for j in 0..parent.references.len() {
                 for k in 0..self.superBlock.len() {
-                    if self.superBlock[k].attributes.inod == parent.references[j].try_into().unwrap() {
+                    if self.superBlock[k].attributes.ino == parent.references[j].try_into().unwrap() {
                         let child =  &self.superBlock[k];
                         if child.name == name {
                             return Some(child);
@@ -195,10 +195,10 @@ impl Disk {
         
     }
 
-    //Agrega data al bloque de memoria asociado al inod
-    pub fn addDataInode(&mut self, inod:u64,data:u8) {
+    //Agrega data al bloque de memoria asociado al ino
+    pub fn addDataInode(&mut self, ino:u64,data:u8) {
         for i in 0..self.memoryBlock.len() {
-            if self.memoryBlock[i].referenceInode == inod {
+            if self.memoryBlock[i].referenceInode == ino {
                 self.memoryBlock[i].addData(data) ;
             }
         }
@@ -212,19 +212,19 @@ impl Disk {
         }
     }
 
-    //Elimina la data el bloque de memoria asociado al inod
-    pub fn deleteDataInode(&mut self, inod:u64,data: u8) {
+    //Elimina la data el bloque de memoria asociado al ino
+    pub fn deleteDataInode(&mut self, ino:u64,data: u8) {
         for i in 0..self.memoryBlock.len() {
-            if self.memoryBlock[i].referenceInode == inod {
+            if self.memoryBlock[i].referenceInode == ino {
                 self.memoryBlock[i].deleteData(data);
             }
         }
     }
 
     //Obtiene el contenido de un arreglo 
-    pub fn getBytesContent(&self, inod: u64) -> Option<&[u8]> {
+    pub fn getBytesContent(&self, ino: u64) -> Option<&[u8]> {
         for i in 0..self.memoryBlock.len() {
-            if self.memoryBlock[i].referenceInode == inod {
+            if self.memoryBlock[i].referenceInode == ino {
                 let bytes = &self.memoryBlock[i].data[..];
                 return Some(bytes);
             }
@@ -330,16 +330,16 @@ impl Filesystem for fileSystem {
         reply.created(&timespe, &attr, 1, availableInode, flags)
     }
 
-    //Escribe dentro de un archivo en base al inod pasado
-    fn write(&mut self, _req: &Request, inod: u64, _fh: u64, offset: i64, data: &[u8], _flags: u32, reply: ReplyWrite) {
+    //Escribe dentro de un archivo en base al ino pasado
+    fn write(&mut self, _req: &Request, ino: u64, _fh: u64, offset: i64, data: &[u8], _flags: u32, reply: ReplyWrite) {
 
-        let inode = self.disk.getMutInode(inod);
+        let inode = self.disk.getMutInode(ino);
         let content: Vec<u8> = data.to_vec();
         
         match inode {
             Some(inode) => {
                 inode.attributes.size = data.len() as u64;
-                self.disk.writeContent(inod, content);
+                self.disk.writeContent(ino, content);
                 println!("    FileSystem Write");
 
                 reply.written(data.len() as u32);
@@ -350,9 +350,9 @@ impl Filesystem for fileSystem {
         }    
     }
 
-    //Busca el bloque de memoria asignado al inod y muestra su contenido 
-    fn read(&mut self, _req: &Request, inod: u64, fh: u64, offset: i64, size: u32, reply: ReplyData) {
-        let memoryBlock = self.disk.getBytesContent(inod);
+    //Busca el bloque de memoria asignado al ino y muestra su contenido 
+    fn read(&mut self, _req: &Request, ino: u64, fh: u64, offset: i64, size: u32, reply: ReplyData) {
+        let memoryBlock = self.disk.getBytesContent(ino);
         match memoryBlock {
             Some(memoryBlock) => {reply.data(memoryBlock);
                 println!("    FileSystem Read");
@@ -368,8 +368,8 @@ impl Filesystem for fileSystem {
         let inode :Option<&Inode> = self.disk.findInodeByName(parent, name);
         match inode {
             Some(inode) => {
-                let inod = inode.attributes.ino;
-                let child = self.disk.getMutInode(inod);
+                let ino = inode.attributes.ino;
+                let child = self.disk.getMutInode(ino);
                 match child {
                     Some(child) => {
                         println!("    FileSystem Rename");
@@ -384,9 +384,9 @@ impl Filesystem for fileSystem {
         }
     }
 
-    //Busca el inode asignado al inod y devuelve sus atributos
-    fn getattr(&mut self,_req: &Request, inod: u64, reply: ReplyAttr) {
-        let inode = self.disk.getInode(inod);
+    //Busca el inode asignado al ino y devuelve sus atributos
+    fn getattr(&mut self,_req: &Request, ino: u64, reply: ReplyAttr) {
+        let inode = self.disk.getInode(ino);
         match inode {
             Some(inode) => {
                 let timeInode = time::now().to_timespec();
@@ -401,10 +401,10 @@ impl Filesystem for fileSystem {
     }
 
     //lee un directorio
-    fn readdir(&mut self, _req: &Request, inod: u64, fh: u64, offset: i64, mut reply: ReplyDirectory) {
+    fn readdir(&mut self, _req: &Request, ino: u64, fh: u64, offset: i64, mut reply: ReplyDirectory) {
         println!("    FileSystem ReadDir");
 
-        if inod == 1 {
+        if ino == 1 {
             if offset == 0 {
                 reply.add(1, 0, FileType::Directory, ".");
                 reply.add(1, 1, FileType::Directory, "..");
@@ -412,7 +412,7 @@ impl Filesystem for fileSystem {
             }
         }
 
-        let inode: Option<&Inode> = self.disk.getInode(inod);
+        let inode: Option<&Inode> = self.disk.getInode(ino);
         if mem::size_of_val(&inode) == offset as usize {
             reply.ok();
             return;
@@ -422,19 +422,19 @@ impl Filesystem for fileSystem {
             Some(inode) => {
                 let references = &inode.references;
 
-                for inod in references {
+                for ino in references {
 
-                    if let inod = inod {
-                        let inode = self.disk.getInode(*inod as u64);
+                    if let ino = ino {
+                        let inode = self.disk.getInode(*ino as u64);
 
                         if let Some(inodeData) = inode {
-                            if inodeData.attributes.inod == 1 {
+                            if inodeData.attributes.ino == 1 {
                                 continue;
                             }
 
                             let name = &inodeData.name;
                             let offset = mem::size_of_val(&inode) as i64;
-                            reply.add(inodeData.attributes.inod, offset, inodeData.attributes.kind, name);
+                            reply.add(inodeData.attributes.ino, offset, inodeData.attributes.kind, name);
                         }
                     }
                 }
@@ -462,11 +462,11 @@ impl Filesystem for fileSystem {
 
     }
 
-    //Crea un directorio y asigna un nuevo inod
+    //Crea un directorio y asigna un nuevo ino
     fn mkdir(&mut self, _req: &Request, parent: u64, name: &OsStr, _mode: u32, reply: ReplyEntry) {
         println!("    FileSystem mkdir");
 
-        let inod = self.disk.returnNextInode(); 
+        let ino = self.disk.returnNextInode(); 
         let timespe = time::now().to_timespec();
         let attr = FileAttr {
             ino: ino as u64,
@@ -495,7 +495,7 @@ impl Filesystem for fileSystem {
         };
 
         self.disk.writeInode(inode);
-        self.disk.addReference(parent,inod as usize);
+        self.disk.addReference(parent,ino as usize);
 
         reply.entry(&timespe, &attr, 0);
     }
@@ -509,9 +509,9 @@ impl Filesystem for fileSystem {
 
         match inode {
             Some(inode) => {
-                let inod = inode.attributes.inod;
-                self.disk.clearReference(parent, inod as usize);
-                self.disk.removeInode(inod);
+                let ino = inode.attributes.ino;
+                self.disk.clearReference(parent, ino as usize);
+                self.disk.removeInode(ino);
 
                 reply.ok();
             },
@@ -523,10 +523,10 @@ impl Filesystem for fileSystem {
     fn statfs(&mut self, _req: &Request, _ino: u64, reply: ReplyStatfs) {
         println!("    FileSystem STATFS");
 
-        let mut blocks:u64 =  (self.disk.super_block.len() +self.disk.memory_block.len()) as u64;
-        let mut blockfree:u64 = blocks - self.disk.memory_block.len() as u64;
+        let mut blocks:u64 =  (self.disk.superBlock.len() +self.disk.memoryBlock.len()) as u64;
+        let mut blockfree:u64 = blocks - self.disk.memoryBlock.len() as u64;
         let mut bavail:u64 = blockfree;
-        let mut files:u64 = self.disk.memory_block.len().try_into().unwrap();
+        let mut files:u64 = self.disk.memoryBlock.len().try_into().unwrap();
         let mut filefree:u64 = 1024 as u64;
         let mut blocksize:u32 = (mem::size_of::<Vec<Inode>>() as u32 +mem::size_of::<Inode>() as u32)*1024;
         let mut namelen:u32 = 77;
@@ -536,7 +536,7 @@ impl Filesystem for fileSystem {
     }
 
     //Vacia los datos de disco y del usuario
-    fn fsync(&mut self, _req: &Request, inod: u64, fh: u64, datasync: bool, reply: ReplyEmpty) {
+    fn fsync(&mut self, _req: &Request, ino: u64, fh: u64, datasync: bool, reply: ReplyEmpty) {
         reply.error(ENOSYS);
     }
 
@@ -586,7 +586,7 @@ pub fn pathValidate(path:String) -> bool{
 pub fn loadFS(path : String) -> Option<Disk>{
     // Carga la base pasada por parametro
     let imagen = image::open("Storage/discoQR.png").unwrap();
-    let grayImage = imagen.into_luma(); //La pasa a grises
+    let grayImage = imagen.to_luma(); //La pasa a grises
 
     //Crea el decodificador
     let mut decoder = quircs::Quirc::default();

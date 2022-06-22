@@ -13,7 +13,7 @@ pub fn mount_qrfs() {
     println!("{:?}", mountPoint);
     let diskDirection = env::args().nth(1).unwrap();
     println!("{:?}", diskDirection);
-    let fileSis = my_QRFS::fileSystem::new(mountPoint.clone(), diskDirection.clone());
+    let fileSis = mkfs_QRFS::fileSystem::new(mountPoint.clone(), diskDirection.clone());
     fsck_qrfs::checkConsistence(&fileSis);
     let options = ["-o", "nonempty"]
         .iter()
