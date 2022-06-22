@@ -264,6 +264,12 @@ impl jr_fs {
     }
 }
 
+impl Drop for jr_fs{
+    fn drop(&mut self) {
+        &self.saveFileSystem();
+    }
+}
+
 impl Filesystem for jr_fs {
 
     //Mira dentro de un directorio por su nombre y obtiene sus atributos
@@ -571,7 +577,7 @@ pub fn saveQR(encodeDisk:Vec<u8>) {
     let image = code.render::<Luma<u8>>().build();
 
     // Save the image.
-    image.save("Storage/discoQR.png").unwrap();
+    image.save("/home/tinky-winky/Documents/Proyecto02SO-QRFS/proyecto02SO/src/Storage/discoQR.png").unwrap();
 }
 
 pub fn pathValidate(path:String) -> bool{
@@ -588,7 +594,7 @@ pub fn pathValidate(path:String) -> bool{
 
 pub fn loadFS(path : String) -> Option<Disk>{
     // Carga la base pasada por parametro
-    let imagen = image::open("Storage/discoQR.png").unwrap();
+    let imagen = image::open("/home/tinky-winky/Documents/Proyecto02SO-QRFS/proyecto02SO/src/Storage/discoQR.png").unwrap();
     let grayImage = imagen.to_luma(); //La pasa a grises
 
     //Crea el decodificador
