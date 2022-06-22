@@ -1,4 +1,4 @@
 mod mount_qrfs;
 fn main() {
-    mount_qrfs::mount();
+    mount_qrfs::mount_qrfs();
 }

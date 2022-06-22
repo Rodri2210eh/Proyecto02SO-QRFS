@@ -8,7 +8,7 @@ use quircs;
 
 pub fn mount_qrfs() {
 
-    println!("{:?}", env::args().nth(0).unwrap(););
+    println!("{:?}", env::args().nth(0).unwrap());
     let mountPoint = env::args().nth(2).unwrap();
     println!("{:?}", mountPoint);
     let diskDirection = env::args().nth(1).unwrap();
