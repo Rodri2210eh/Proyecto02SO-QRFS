@@ -1,9 +1,9 @@
-use crate::mkfs_QRFS::fileSystem;
+use crate::mkfs_QRFS::jr_fs;
 use std::mem;
 use sysinfo::{NetworkExt, NetworksExt, ProcessExt, System, SystemExt};
 
 //Checamos cuanto espacio disponible y cuanto usado en general vemos el estado del disco
-pub fn checkConsistence(fs:&fileSystem){
+pub fn checkConsistence(fs:&jr_fs){
 
     let mut sys = System::new_all();
     sys.refresh_all();

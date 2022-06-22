@@ -238,14 +238,14 @@ impl Disk {
 //FILESYSTEM
 
 //Estructura del FS, solo tendremos un disco
-pub struct fileSystem {
+pub struct jr_fs {
     disk : Disk
 }
 
-impl fileSystem {
+impl jr_fs {
     pub fn new(rootPath:String, diskPath:String) -> Self{
         let newDisk = Disk::new(rootPath.to_string(), diskPath);
-        fileSystem {
+        jr_fs {
             disk : newDisk
         }
     }
@@ -264,7 +264,7 @@ impl fileSystem {
     }
 }
 
-impl Filesystem for fileSystem {
+impl Filesystem for jr_fs {
 
     //Mira dentro de un directorio por su nombre y obtiene sus atributos
     fn lookup(&mut self, _req: &Request, parent: u64, name: &OsStr, reply: ReplyEntry) {
@@ -375,6 +375,9 @@ impl Filesystem for fileSystem {
                         println!("    FileSystem Rename");
                         child.name = newname.to_str().unwrap().to_string();
                         reply.ok()
+                    }
+                    None => {
+                        println!("No se pudo renombrar el FileSystem");
                     }
                 }
             },
